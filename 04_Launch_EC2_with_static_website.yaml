@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create EC2 which run static websites
+Resources:
+  # ------------------------------------------------------------#
+  # Security Group
+  # ------------------------------------------------------------# 
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group allowing Public SSH and Ping access
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow ping
+          FromPort: 8
+          IpProtocol: ICMP
+          ToPort: 0
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow SSH
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow http
+          FromPort: 80
+          IpProtocol: http
+          ToPort: 80
+  # ------------------------------------------------------------#
+  # EC2
+  # ------------------------------------------------------------# 
+  MyEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0b193da66bc27147b
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+        - !Ref MySecurityGroup
+      KeyName: kp-for-cf
+      UserData:
+        Fn::Base64: |
+          #! /bin/bash
+          yum update -y
+          yum install httpd -y
+          systemctl enable httpd
+          systemctl start httpd
+          torch /var/www/html/index.html
+          echo "EC2 instance running a static website" > /var/www/html/index.html
+          exit 0
+Outputs:
+  WebsiteURL:
+    Description: URL of the website
+    Value: !GetAtt      
+      - MyEC2
+      - PublicDnsName
+          
+  
+          
