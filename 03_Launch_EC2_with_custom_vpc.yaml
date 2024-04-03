@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create EC2 with custom vpc, custom security group
+Resources:
+# ------------------------------------------------------------#
+# VPC
+# ------------------------------------------------------------# 
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+# ------------------------------------------------------------#
+# Subnet
+# ------------------------------------------------------------# 
+  MySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      VpcId: !Ref MyVPC
+      MapPublicIpOnLaunch: true # need this to make subnet automatically assign public IP for EC2
+# ------------------------------------------------------------#
+# InternetGateway
+# ------------------------------------------------------------# 
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+# ------------------------------------------------------------#
+# RouteTable
+# ------------------------------------------------------------# 
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+
+  PublicRouteTableRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref MyRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGateway
+
+  PublicRtAssociation1:       # need this to map route table and subnet
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref MyRouteTable
+      SubnetId: !Ref MySubnet
+  
+# ------------------------------------------------------------#
+# Security Group
+# ------------------------------------------------------------# 
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group allowing Public SSH and Ping access
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow ping
+          FromPort: 8
+          IpProtocol: ICMP
+          ToPort: 0
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow SSH
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+      VpcId: !Ref MyVPC     # need this to associate security group to vpc
+
+# ------------------------------------------------------------#
+# EC2
+# ------------------------------------------------------------# 
+  MyEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0b193da66bc27147b
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+        - !Ref MySecurityGroup
+      KeyName: kp-for-cf
+      SubnetId: !Ref MySubnet
