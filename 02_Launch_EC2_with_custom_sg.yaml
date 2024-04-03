@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create EC2 with custom vpc, custom security group
+Resources:
+  MyEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0b193da66bc27147b # imageId should in the region
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+        - !Ref MySecurityGroup
+      KeyName: kp-for-cf # keyname should already exist
+      
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group allowing Public SSH and Ping access
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow ping
+          FromPort: 8
+          IpProtocol: ICMP
+          ToPort: 0
+        - CidrIp: 0.0.0.0/0  
+          Description: Allow SSH
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+  
