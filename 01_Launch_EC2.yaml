@@ -1,0 +1,7 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyLaunchTemplate:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0b193da66bc27147b
+      InstanceType: t2.micro
